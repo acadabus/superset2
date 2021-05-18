@@ -273,6 +273,8 @@ export const exportChart = ({
   force = false,
   ownState = {},
 }) => {
+
+  console.log(123);
   let url;
   let payload;
   if (shouldUseLegacyApi(formData)) {
@@ -293,6 +295,7 @@ export const exportChart = ({
       ownState,
     });
   }
+  console.log(url, payload);
   postForm(url, payload);
 };
 
@@ -302,8 +305,11 @@ export const exploreChart = formData => {
     endpointType: 'base',
     allowDomainSharding: false,
   });
+  console.log(formData, url);
   postForm(url, formData);
 };
+
+// export const exploreFrontendChart =
 
 export const useDebouncedEffect = (effect, delay, deps) => {
   // eslint-disable-next-line react-hooks/exhaustive-deps

@@ -27,6 +27,7 @@ from flask_appbuilder.api import expose, protect, rison, safe
 from flask_appbuilder.models.sqla.interface import SQLAInterface
 from flask_babel import gettext as _, ngettext
 from marshmallow import ValidationError
+from openpyxl.writer.excel import save_virtual_workbook
 from werkzeug.wrappers import Response as WerkzeugResponse
 from werkzeug.wsgi import FileWrapper
 
@@ -87,6 +88,8 @@ from superset.views.base_api import (
 )
 from superset.views.core import CsvResponse, generate_download_headers
 from superset.views.filters import FilterRelatedOwners
+from tablepyxl import tablepyxl
+
 
 logger = logging.getLogger(__name__)
 
@@ -507,17 +510,32 @@ class ChartRestApi(BaseSupersetModelRestApi):
 
             sio.seek(0)
             workbook = sio.getvalue()
+            print(workbook)
             return CsvResponse(workbook, headers=generate_download_headers("xlsx"))
+
 
         return self.response_400(message=f"Unsupported result_format: {result_format}")
 
-    @expose("/data", methods=["POST"])
-    @protect()
+    @expose("/frontend_view", methods=["POST"])
     @statsd_metrics
+    @protect()
     @event_logger.log_this_with_context(
-        action=lambda self, *args, **kwargs: f"{self.__class__.__name__}.data",
+        action=lambda self, *args, **kwargs: f"{self.__class__.__name__}.frontend_view",
         log_to_statsd=False,
     )
+    def frontend_view(self) -> Response:
+
+        print('12312312313121312312'*10)
+
+        json_body = None
+        if request.is_json:
+            json_body = request.json
+
+        print(json_body)
+        return self.response_400(message=f"OK")
+
+
+    @expose("/data", methods=["POST"])
     def data(self) -> Response:
         """
         Takes a query context constructed in the client and returns payload
@@ -565,6 +583,20 @@ class ChartRestApi(BaseSupersetModelRestApi):
                 json_body = json.loads(request.form["form_data"])
             except (TypeError, json.JSONDecodeError):
                 pass
+
+        print(json_body['result_format'] == 'from_html')
+        if json_body['result_format'] == 'from_html':
+            print("JSON!!!!!", json_body)
+            wb = tablepyxl.document_to_workbook(json_body['result_type'])
+
+            sio = BytesIO(save_virtual_workbook(wb))
+            sio.seek(0)
+            workbook = sio.getvalue()
+            print(workbook)
+
+            return CsvResponse(workbook, headers=generate_download_headers("xlsx"))
+
+
 
         if json_body is None:
             return self.response_400(message=_("Request is not JSON"))

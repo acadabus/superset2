@@ -1044,10 +1044,6 @@
           },
           "result_format": {
             "description": "Format of result payload",
-            "enum": [
-              "json",
-              "csv"
-            ],
             "type": "string"
           },
           "result_type": {
