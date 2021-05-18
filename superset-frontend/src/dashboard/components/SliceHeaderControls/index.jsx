@@ -32,6 +32,7 @@ import getDashboardUrl from 'src/dashboard/util/getDashboardUrl';
 import { getActiveFilters } from 'src/dashboard/util/activeDashboardFilters';
 import { FeatureFlag, isFeatureEnabled } from 'src/featureFlags';
 import CrossFilterScopingModal from 'src/dashboard/components/CrossFilterScopingModal/CrossFilterScopingModal';
+import XLSX from 'xlsx';
 
 const propTypes = {
   slice: PropTypes.object.isRequired,
@@ -111,10 +112,10 @@ const VerticalDotsTrigger = () => (
   </VerticalDotsContainer>
 );
 
-function exportTableToExcel(tables, filename = ''){
+
+function exportTableToExcelV2(tables, filename = ''){
     let table = document.createElement('table');
 
-    console.log(tables);
     for(let i = 0; i < tables.length; i++){
       const secTable = tables[i].cloneNode(true);
       for(let j = 0; j < secTable.children.length; j++){
@@ -122,24 +123,8 @@ function exportTableToExcel(tables, filename = ''){
       }
     }
 
-    console.log(table);
-    const tableHTML = table.outerHTML.replace('<tfoot>', '').replace('</tfoot>', '');
-    console.log(tableHTML);
-
-    let uri = 'data:application/vnd.ms-excel;base64,'
-            , template = '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40"><meta http-equiv="content-type" content="application/vnd.ms-excel; charset=UTF-8"><head><!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>{worksheet}</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]--></head><body>' + tableHTML + '</body></html>'
-            , base64 = function (s) { return window.btoa(unescape(encodeURIComponent(s))) }
-            , format = function (s, c) { return s.replace(/{(\w+)}/g, function (m, p) { return c[p]; }) };
-
-    // Create download link element
-    let downloadLink = document.createElement("a");
-    let ctx = { worksheet: 'Лист', table: tableHTML};
-    downloadLink.href = uri + base64(format(template, ctx));
-    downloadLink.download = (filename||"exportedTable") + ".xls";
-
-    document.body.appendChild(downloadLink);
-    downloadLink.click();
-    document.body.removeChild(downloadLink);
+    let wb = XLSX.utils.table_to_book(table, {sheet:"Лист"});
+    XLSX.writeFile(wb, (filename||"exportedTable") + ".xlsx");
 }
 
 class SliceHeaderControls extends React.PureComponent {
@@ -315,7 +300,7 @@ class SliceHeaderControls extends React.PureComponent {
           <Menu.Item onClick={() => {
             const father = document.querySelectorAll(`[data-test-chart-id="${this.props.slice.slice_id}"]`)[0];
             const tables = father.querySelectorAll('table');
-            exportTableToExcel(tables, `${this.props.slice.slice_name}`);
+            exportTableToExcelV2(tables, `${this.props.slice.slice_name}`);
           }
           }>{t('Export current table')}</Menu.Item> : null}
         {isFeatureEnabled(FeatureFlag.DASHBOARD_CROSS_FILTERS) &&
